@@ -70,8 +70,7 @@ public class GestorInventarioDOM {
         }
         System.out.println(cadena);
     }
-    private static void actualizarStock(String idProducto,int stock) throws Exception {
-        Document document=cargarXML("inventario.xml");
+    public static void actualizarStock(Document document,String idProducto,int stock) throws Exception {
         List<String> idProductos=new ArrayList<>();
 
         NodeList listaProductos=document.getElementsByTagName("producto");
@@ -84,7 +83,88 @@ public class GestorInventarioDOM {
             System.out.println("no se pudo actualizar el stock :(");
         }
         else {
-
+            for (int i = 0; i < listaProductos.getLength(); i++) {
+                Element producto= (Element) listaProductos.item(i);
+                String id=producto.getAttribute("id");
+                if (id.equals(idProducto)){
+                    Node st=producto.getElementsByTagName("stock").item(0);
+                    st.setTextContent(String.valueOf(stock));
+                }
+            }
         }
+    }
+    public static void anadirProducto(Document document,String id, String categoria, String nombre, String marca, double precio, int stock) throws Exception {
+        List<String> idProductos=new ArrayList<>();
+
+        NodeList listaProductos=document.getElementsByTagName("producto");
+        for (int i = 0; i < listaProductos.getLength(); i++) {
+            Element producto=(Element) listaProductos.item(i);
+            String idProducto=producto.getAttribute("id");
+            idProductos.add(idProducto);
+        }
+        if (!idProductos.contains(id)){
+            System.out.println("Ya existe un producto con esa misma id");
+        }
+        else {
+            Element nuevoProducto=document.createElement("producto");
+            nuevoProducto.setAttribute("id",id);
+
+            Element categoriaNew,nombreNew,marcaNew,precioNew,stockNew;
+
+            categoriaNew=document.createElement("categoria");
+            categoriaNew.setTextContent(categoria);
+
+            nombreNew=document.createElement("nombre");
+            nombreNew.setTextContent(nombre);
+
+            marcaNew=document.createElement("marca");
+            marcaNew.setTextContent(marca);
+
+            precioNew=document.createElement("precio");
+            precioNew.setTextContent(String.valueOf(precio));
+
+            stockNew=document.createElement("stock");
+            stockNew.setTextContent(String.valueOf(stock));
+
+            nuevoProducto.appendChild(categoriaNew);
+            nuevoProducto.appendChild(nombreNew);
+            nuevoProducto.appendChild(marcaNew);
+            nuevoProducto.appendChild(precioNew);
+            nuevoProducto.appendChild(stockNew);
+        }
+    }
+    public static void eliminarProducto(Document document,String idProducto) throws Exception {
+        Node inventario=document.getElementsByTagName("inventario").item(0);
+        NodeList productos=document.getElementsByTagName("producto");
+
+        List<String> idProductos=new ArrayList<>();
+
+        for (int i = 0; i < productos.getLength(); i++) {
+            Element producto=(Element) productos.item(i);
+            String id=producto.getAttribute("id");
+            idProductos.add(id);
+        }
+        if (!idProductos.contains(idProducto)){
+            System.out.println("No existe un producto con esa misma id");
+        }
+        else {
+            for (int i = 0; i < productos.getLength(); i++) {
+                Element productoActual= (Element) productos.item(i);
+                String id=productoActual.getAttribute("id");
+
+                if (id.equals(idProducto)){
+                    inventario.removeChild(productoActual);
+                }
+            }
+        }
+    }
+    public static void guardarXML(Document document,String rutaSalida) throws Exception {
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+
+        DOMSource source = new DOMSource(document);
+        StreamResult result = new StreamResult(new File(rutaSalida));
+        transformer.transform(source, result);
     }
 }
