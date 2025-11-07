@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<inventario tienda="La Vereda Tech">
+      
+    <producto id="P101">
+            
+        <categoria>Procesador</categoria>
+            
+        <nombre>CPU Core i7 13700K</nombre>
+            
+        <marca>Intel</marca>
+            
+        <precio>410.50</precio>
+            
+        <stock>15</stock>
+          
+    </producto>
+      
+    <producto id="P102">
+            
+        <categoria>Placa Base</categoria>
+            
+        <nombre>Placa Z790 AORUS</nombre>
+            
+        <marca>Gigabyte</marca>
+            
+        <precio>320.00</precio>
+            
+        <stock>8</stock>
+         
+    </producto>
+      
+    <producto id="P103">
+            
+        <categoria>Gráfica</categoria>
+            
+        <nombre>GPU RTX 4070</nombre>
+            
+        <marca>Nvidia</marca>
+            
+        <precio>650.99</precio>
+            
+        <stock>12</stock>
+          
+    </producto>
+      
+    <producto id="P104">
+            
+        <categoria>Almacenamiento</categoria>
+            
+        <nombre>SSD NVMe 2TB</nombre>
+            
+        <marca>Samsung</marca>
+            
+        <precio>135.00</precio>
+            
+        <stock>30</stock>
+          
+    </producto>
+    
+    <producto id="P105">
+        <categoria>Sus</categoria>
+        <nombre>Mogus</nombre>
+        <marca>Amongus</marca>
+        <precio>100.34</precio>
+        <stock>234</stock>
+    </producto>
+</inventario>

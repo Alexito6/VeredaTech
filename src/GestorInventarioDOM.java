@@ -1,25 +1,15 @@
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Document;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
+import org.w3c.dom.*;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import javax.xml.transform.*;
-import org.w3c.dom.*;
-import org.xml.sax.SAXException;
+import java.util.Scanner;
 
 public class GestorInventarioDOM {
+    private static final Scanner scanner=new Scanner(System.in);
 
-    public static Document cargarXML(String ruta) throws Exception{
+    public static Document cargarXML(String ruta) throws Exception {
         File xmlFile = new File(ruta);
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -27,144 +17,202 @@ public class GestorInventarioDOM {
         doc.getDocumentElement().normalize();
         return doc;
     }
-    public static void mostrarInventario(Document document){
-        NodeList listaProductos=document.getElementsByTagName("producto");
-        StringBuilder cadena=new StringBuilder();
-        cadena.append("Inventario de La Vereda Tech: \n");
+
+    public static void mostrarInventario() throws Exception {
+        Document document = cargarXML("inventario.xml");
+        NodeList listaProductos = document.getElementsByTagName("producto");
+        StringBuilder cadena = new StringBuilder("Inventario de La Vereda Tech:\n");
 
         for (int i = 0; i < listaProductos.getLength(); i++) {
-            cadena.append("Producto º").append(i + 1).append(": ");
-
-            Element producto= (Element) listaProductos.item(i);
-            String idProducto=producto.getAttribute("id");
-            String categoria=producto.getElementsByTagName("categoria").item(0).getTextContent();
-            String nombre=producto.getElementsByTagName("nombre").item(0).getTextContent();
-            String marca=producto.getElementsByTagName("marca").item(0).getTextContent();
-            String precio=producto.getElementsByTagName("precio").item(0).getTextContent();
-            String stock=producto.getElementsByTagName("stock").item(0).getTextContent();
-
-            cadena.append("id: ").append(idProducto).append(", categoria: ").append(categoria).append(", nombre: ").append(nombre).append(", marca: ").append(marca).append(", precio: ").append(precio).append(", stock: ").append(stock).append("\n");
-
+            Element producto = (Element) listaProductos.item(i);
+            cadena.append("Producto Nº").append(i + 1).append(": ");
+            cadena.append(obtenerInfoProducto(producto)).append("\n");
         }
+
         System.out.println(cadena);
     }
+
     public static void buscarProductosStockBajo(int limiteStock) throws Exception {
-        Document document=cargarXML("inventario.xml");
-        NodeList listaProductos=document.getElementsByTagName("producto");
-        StringBuilder cadena=new StringBuilder();
-        cadena.append("Inventario de stock inferior a ").append(limiteStock).append(" de La Vereda Tech: \n");
+        Document document = cargarXML("inventario.xml");
+        NodeList listaProductos = document.getElementsByTagName("producto");
+        StringBuilder cadena = new StringBuilder("Inventario con stock inferior a " + limiteStock + ":\n");
 
         for (int i = 0; i < listaProductos.getLength(); i++) {
-            Element producto= (Element) listaProductos.item(i);
-            String stock=producto.getElementsByTagName("stock").item(0).getTextContent();
+            Element producto = (Element) listaProductos.item(i);
+            int stock = Integer.parseInt(producto.getElementsByTagName("stock").item(0).getTextContent());
 
-            if (Integer.parseInt(stock)<limiteStock){
-                String idProducto=producto.getAttribute("id");
-                String categoria=producto.getElementsByTagName("categoria").item(0).getTextContent();
-                String nombre=producto.getElementsByTagName("nombre").item(0).getTextContent();
-                String marca=producto.getElementsByTagName("marca").item(0).getTextContent();
-                String precio=producto.getElementsByTagName("precio").item(0).getTextContent();
-
-                cadena.append("id: ").append(idProducto).append(", categoria: ").append(categoria).append(", nombre: ").append(nombre).append(", marca: ").append(marca).append(", precio: ").append(precio).append(", stock: ").append(stock).append("\n");
+            if (stock < limiteStock) {
+                cadena.append(obtenerInfoProducto(producto)).append("\n");
             }
         }
+
         System.out.println(cadena);
     }
-    public static void actualizarStock(Document document,String idProducto,int stock) throws Exception {
-        List<String> idProductos=new ArrayList<>();
 
-        NodeList listaProductos=document.getElementsByTagName("producto");
+    public static void actualizarStock(String idProducto, int nuevoStock) throws Exception {
+        Document document = cargarXML("inventario.xml");
+
+        if (!comprobarExistenciaProducto(document, idProducto)) {
+            System.out.println("No se pudo actualizar el stock: el producto no existe.");
+            return;
+        }
+
+        NodeList listaProductos = document.getElementsByTagName("producto");
         for (int i = 0; i < listaProductos.getLength(); i++) {
-            Element producto=(Element) listaProductos.item(i);
-            String idProducto2=producto.getAttribute("id");
-            idProductos.add(idProducto2);
-        }
-        if (!idProductos.contains(idProducto)){
-            System.out.println("no se pudo actualizar el stock :(");
-        }
-        else {
-            for (int i = 0; i < listaProductos.getLength(); i++) {
-                Element producto= (Element) listaProductos.item(i);
-                String id=producto.getAttribute("id");
-                if (id.equals(idProducto)){
-                    Node st=producto.getElementsByTagName("stock").item(0);
-                    st.setTextContent(String.valueOf(stock));
-                }
+            Element producto = (Element) listaProductos.item(i);
+            if (producto.getAttribute("id").equals(idProducto)) {
+                producto.getElementsByTagName("stock").item(0).setTextContent(String.valueOf(nuevoStock));
+                break;
             }
         }
+
+        guardarXML(document, "inventario_actualizado.xml");
+        System.out.println("Stock actualizado correctamente para el producto con id: " + idProducto);
     }
-    public static void anadirProducto(Document document,String id, String categoria, String nombre, String marca, double precio, int stock) throws Exception {
-        List<String> idProductos=new ArrayList<>();
 
-        NodeList listaProductos=document.getElementsByTagName("producto");
-        for (int i = 0; i < listaProductos.getLength(); i++) {
-            Element producto=(Element) listaProductos.item(i);
-            String idProducto=producto.getAttribute("id");
-            idProductos.add(idProducto);
+    public static void anadirProducto(String id, String categoria, String nombre, String marca, double precio, int stock) throws Exception {
+        Document document = cargarXML("inventario.xml");
+
+        if (comprobarExistenciaProducto(document, id)) {
+            System.out.println("Ya existe un producto con esa misma id.");
+            return;
         }
-        if (!idProductos.contains(id)){
-            System.out.println("Ya existe un producto con esa misma id");
-        }
-        else {
-            Element nuevoProducto=document.createElement("producto");
-            nuevoProducto.setAttribute("id",id);
 
-            Element categoriaNew,nombreNew,marcaNew,precioNew,stockNew;
+        Element nuevoProducto = document.createElement("producto");
+        nuevoProducto.setAttribute("id", id);
 
-            categoriaNew=document.createElement("categoria");
-            categoriaNew.setTextContent(categoria);
+        Element categoriaNew = document.createElement("categoria");
+        categoriaNew.setTextContent(categoria);
+        nuevoProducto.appendChild(categoriaNew);
 
-            nombreNew=document.createElement("nombre");
-            nombreNew.setTextContent(nombre);
+        Element nombreNew = document.createElement("nombre");
+        nombreNew.setTextContent(nombre);
+        nuevoProducto.appendChild(nombreNew);
 
-            marcaNew=document.createElement("marca");
-            marcaNew.setTextContent(marca);
+        Element marcaNew = document.createElement("marca");
+        marcaNew.setTextContent(marca);
+        nuevoProducto.appendChild(marcaNew);
 
-            precioNew=document.createElement("precio");
-            precioNew.setTextContent(String.valueOf(precio));
+        Element precioNew = document.createElement("precio");
+        precioNew.setTextContent(String.valueOf(precio));
+        nuevoProducto.appendChild(precioNew);
 
-            stockNew=document.createElement("stock");
-            stockNew.setTextContent(String.valueOf(stock));
+        Element stockNew = document.createElement("stock");
+        stockNew.setTextContent(String.valueOf(stock));
+        nuevoProducto.appendChild(stockNew);
 
-            nuevoProducto.appendChild(categoriaNew);
-            nuevoProducto.appendChild(nombreNew);
-            nuevoProducto.appendChild(marcaNew);
-            nuevoProducto.appendChild(precioNew);
-            nuevoProducto.appendChild(stockNew);
-        }
+        document.getDocumentElement().appendChild(nuevoProducto);
+        guardarXML(document, "inventario_actualizado.xml");
+
+        System.out.println("Producto añadido correctamente con id: " + id);
     }
-    public static void eliminarProducto(Document document,String idProducto) throws Exception {
-        Node inventario=document.getElementsByTagName("inventario").item(0);
-        NodeList productos=document.getElementsByTagName("producto");
 
-        List<String> idProductos=new ArrayList<>();
+    public static void eliminarProducto(String idProducto) throws Exception {
+        Document document = cargarXML("inventario.xml");
+
+        if (!comprobarExistenciaProducto(document, idProducto)) {
+            System.out.println("No existe un producto con esa id.");
+            return;
+        }
+
+        Node inventario = document.getElementsByTagName("inventario").item(0);
+        NodeList productos = document.getElementsByTagName("producto");
 
         for (int i = 0; i < productos.getLength(); i++) {
-            Element producto=(Element) productos.item(i);
-            String id=producto.getAttribute("id");
-            idProductos.add(id);
-        }
-        if (!idProductos.contains(idProducto)){
-            System.out.println("No existe un producto con esa misma id");
-        }
-        else {
-            for (int i = 0; i < productos.getLength(); i++) {
-                Element productoActual= (Element) productos.item(i);
-                String id=productoActual.getAttribute("id");
-
-                if (id.equals(idProducto)){
-                    inventario.removeChild(productoActual);
-                }
+            Element producto = (Element) productos.item(i);
+            if (producto.getAttribute("id").equals(idProducto)) {
+                inventario.removeChild(producto);
+                break;
             }
         }
-    }
-    public static void guardarXML(Document document,String rutaSalida) throws Exception {
 
+        guardarXML(document, "inventario_actualizado.xml");
+        System.out.println("Producto eliminado correctamente con id: " + idProducto);
+    }
+
+    public static void guardarXML(Document document, String rutaSalida) throws Exception {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT,"yes");
 
         DOMSource source = new DOMSource(document);
         StreamResult result = new StreamResult(new File(rutaSalida));
         transformer.transform(source, result);
     }
+
+    private static boolean comprobarExistenciaProducto(Document document, String idProducto) {
+        NodeList listaProductos = document.getElementsByTagName("producto");
+        for (int i = 0; i < listaProductos.getLength(); i++) {
+            Element producto = (Element) listaProductos.item(i);
+            if (producto.getAttribute("id").equals(idProducto)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String obtenerInfoProducto(Element producto) {
+        String id = producto.getAttribute("id");
+        String categoria = producto.getElementsByTagName("categoria").item(0).getTextContent();
+        String nombre = producto.getElementsByTagName("nombre").item(0).getTextContent();
+        String marca = producto.getElementsByTagName("marca").item(0).getTextContent();
+        String precio = producto.getElementsByTagName("precio").item(0).getTextContent();
+        String stock = producto.getElementsByTagName("stock").item(0).getTextContent();
+
+        return "id: " + id + ", categoria: " + categoria + ", nombre: " + nombre +
+                ", marca: " + marca + ", precio: " + precio + ", stock: " + stock;
+    }
+
+    public static String pedirDato(String mensaje, String tipo) {
+        String valor = null;
+        boolean valido = false;
+
+        do {
+            System.out.print(mensaje);
+            String entrada = scanner.nextLine().trim();
+
+            switch (tipo) {
+                case "String":
+                    if (!entrada.isEmpty()) {
+                        valor = entrada;
+                        valido = true;
+                    } else {
+                        System.out.println("El valor no puede estar vacío.");
+                    }
+                    break;
+                case "int":
+                    try {
+                        int intValor = Integer.parseInt(entrada);
+                        if (intValor >= 0) {
+                            valor = String.valueOf(intValor);
+                            valido = true;
+                        } else {
+                            System.out.println("El número debe ser mayor o igual a 0.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Por favor introduce un número entero");
+                    }
+                    break;
+                case "double":
+                    try {
+                        double doubleValor = Double.parseDouble(entrada);
+                        if (doubleValor >= 0) {
+                            valor = String.valueOf(doubleValor);
+                            valido = true;
+                        } else {
+                            System.out.println("El número debe ser mayor o igual a 0.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Debes introducir un número double válido (número con coma)");
+                    }
+                    break;
+                default:
+                    System.out.println("Tipo de dato no soportado.");
+                    valido = true;
+            }
+        } while (!valido);
+
+        return valor;
+    }
+
 }
